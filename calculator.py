@@ -73,6 +73,21 @@ def myeval(node, env):
     return node
 
 
+# rewrites all the appearance of '1' to '2'
+class WiredTransformer(ast.NodeTransformer):
+    def __init__(self):
+        super().__init__()
+
+    def visit_Num(self, node):
+        if node.n == 1:
+            return ast.copy_location(ast.Num(
+                n = 2,
+                ), node)
+        return node
+
+    def visit(self, node):
+        return super().visit(node)
+
 def main():
     env = []
 
@@ -86,6 +101,7 @@ def main():
             continue
         tree = ast.parse(input_string)
         walk(tree)
+        tree = WiredTransformer().visit(tree)
         assert(isinstance(tree, ast.Module))
         tree = list(ast.iter_child_nodes(tree))[0]
 
