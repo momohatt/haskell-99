@@ -17,12 +17,15 @@ Section Confluency.
 
   Definition multiR := multi R.
 
+  Notation "x '==>' y" := (R x y) (at level 80).
+  Notation "x '==>*' y" := (multiR x y) (at level 80).
+
   Lemma multiR_refl :
-    forall x, multiR x x.
+    forall x, x ==>* x.
   Proof. intros. apply multi_refl. Qed.
 
   Lemma multiR_trans :
-    forall x y z, multiR x y -> multiR y z -> multiR x z.
+    forall x y z, x ==>* y -> y ==>* z -> x ==>* z.
   Proof.
     intros. generalize dependent z.
     induction H as [x | x w y]; auto.
@@ -32,14 +35,14 @@ Section Confluency.
   Hint Rewrite multiR_refl multiR_trans.
 
   Definition weak_confluence_R :=
-    forall x y y' : X, R x y -> R x y' ->
-    exists z : X, multiR y z /\ multiR y' z.
+    forall x y y' : X, x ==> y -> x ==> y' ->
+    exists z : X, y ==>* z /\ y' ==>* z.
 
   Definition confluence_R :=
-    forall x y y' : X, multiR x y -> multiR x y' ->
-    exists z : X, multiR y z /\ multiR y' z.
+    forall x y y' : X, x ==>* y -> x ==>* y' ->
+    exists z : X, y ==>* z /\ y' ==>* z.
 
-  Axiom well_founded_R : well_founded (fun x y => R y x).
+  Axiom well_founded_R : well_founded (fun x y => y ==> x).
 
   Theorem confluence :
     weak_confluence_R -> confluence_R.
@@ -55,14 +58,14 @@ Section Confluency.
     - destruct H1 as [x | x w' y'].
       + (* x = y' *)
         exists y; split; unfold multiR; eauto.
-      + assert (exists u, multiR w u /\ multiR w' u) by
+      + assert (exists u, w ==>* u /\ w' ==>* u) by
           (apply weak_confluence with x; auto).
         destruct H3 as [u [? ?]].
-        assert (exists v, multiR y v /\ multiR u v) by
+        assert (exists v, y ==>* v /\ u ==>* v) by
           (apply IH with (y:=w); auto).
         destruct H5 as [v [? ?]].
         assert (multiR w' v) by (apply multiR_trans with u; auto).
-        assert (exists d, multiR v d /\ multiR y' d) by
+        assert (exists d, v ==>* d /\ y' ==>* d) by
           (apply IH with w'; auto).
         destruct H8 as [d [? ?]].
         exists d; split; auto.
