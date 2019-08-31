@@ -3,63 +3,56 @@ Section Confluency.
   Definition relation (X : Type) : Type :=
     X -> X -> Prop.
   Variable R : relation X.
-
-  Inductive multi (R : relation X) : relation X :=
-    | multi_refl :
-        forall (x : X), multi R x x
-    | multi_step :
-        forall (x y z : X),
-        R x y ->
-        multi R y z ->
-        multi R x z.
-
-  Hint Constructors multi.
-
-  Definition multiR := multi R.
-
   Notation "x '==>' y" := (R x y) (at level 80).
-  Notation "x '==>*' y" := (multiR x y) (at level 80).
 
-  Lemma multiR_refl :
-    forall x, x ==>* x.
-  Proof. intros. apply multi_refl. Qed.
+  Reserved Notation "x '==>*' y" (at level 80).
+  Inductive multiR : relation X :=
+  | multi_refl :
+      forall (x : X), x ==>* x
+  | multi_step :
+      forall (x y z : X),
+      x ==> y ->
+      y ==>* z ->
+      x ==>* z
+  where "x '==>*' y" := (multiR x y).
+
+  Hint Constructors multiR.
 
   Lemma multiR_trans :
     forall x y z, x ==>* y -> y ==>* z -> x ==>* z.
   Proof.
     intros. generalize dependent z.
     induction H as [x | x w y]; auto.
-    - intros. apply IHmulti in H1. apply multi_step with w; auto.
+    - intros. apply multi_step with w; auto.
   Qed.
 
-  Hint Rewrite multiR_refl multiR_trans.
-
-  Definition weak_confluence_R :=
+  Definition weak_confluent_R :=
     forall x y y' : X, x ==> y -> x ==> y' ->
     exists z : X, y ==>* z /\ y' ==>* z.
 
-  Definition confluence_R :=
+  Definition confluent_R :=
     forall x y y' : X, x ==>* y -> x ==>* y' ->
     exists z : X, y ==>* z /\ y' ==>* z.
 
-  Axiom well_founded_R : well_founded (fun x y => y ==> x).
+  Definition terminating_R :=
+    well_founded (fun x y => y ==> x).
 
-  Theorem confluence :
-    weak_confluence_R -> confluence_R.
+  Theorem confluent :
+    terminating_R -> weak_confluent_R -> confluent_R.
   Proof.
-    unfold weak_confluence_R, confluence_R.
-    intros weak_confluence x.
-    induction x using (well_founded_ind well_founded_R);
+    unfold weak_confluent_R, confluent_R.
+    intros termination weak_confluent x.
+    induction x using (well_founded_ind termination);
       intros; rename H into IH.
 
     destruct H0 as [x | x w y].
     - (* x = y *)
-      exists y'; split; unfold multiR; eauto.
+      exists y'; split; eauto.
     - destruct H1 as [x | x w' y'].
       + (* x = y' *)
-        exists y; split; unfold multiR; eauto.
+        exists y; split; eauto.
       + assert (exists u, w ==>* u /\ w' ==>* u) by
-          (apply weak_confluence with x; auto).
+          (apply weak_confluent with x; auto).
         destruct H3 as [u [? ?]].
         assert (exists v, y ==>* v /\ u ==>* v) by
           (apply IH with (y:=w); auto).
@@ -70,4 +63,59 @@ Section Confluency.
         destruct H8 as [d [? ?]].
         exists d; split; auto.
         apply multiR_trans with v; auto.
-Qed.
+  Qed.
+
+  (* reflexive symmetric transitive closure *)
+  Reserved Notation "x '<==>*' y" (at level 80).
+  Inductive rst_closure : relation X :=
+  | rst_refl :
+      forall x, x <==>* x
+  | rst_step1 :
+      forall x y z, x ==> y -> y <==>* z -> x <==>* z
+  | rst_step2 :
+      forall x y z, y ==> x -> y <==>* z -> x <==>* z
+  where "x '<==>*' y" := (rst_closure x y).
+
+  Hint Constructors rst_closure.
+
+  Lemma multi_is_rst_closure :
+    forall x y, x ==>* y -> x <==>* y.
+  Proof.
+    intros. induction H; eauto.
+  Qed.
+
+  Lemma rst_closure_symm :
+    forall x y, x <==>* y -> y <==>* x.
+  Proof.
+  Admitted.
+
+  Lemma rst_closure_trans :
+    forall x y z, x <==>* y -> y <==>* z -> x <==>* z.
+  Proof with auto.
+    intros. generalize dependent z.
+    induction H as [x | x w y | x w y ]; intros...
+    - apply rst_step1 with w...
+    - apply rst_step2 with w...
+  Qed.
+
+  Definition joinableR x y :=
+    exists z, x ==>* z /\ y ==>* z.
+
+  Definition church_rosser_R :=
+    forall x y, x <==>* y -> joinableR x y.
+
+  Theorem confluence_church_rosser_equiv :
+    confluent_R <-> church_rosser_R.
+  Proof.
+    unfold confluent_R, church_rosser_R.
+    split; intros.
+    - (* confluent -> church rosser *)
+      admit.
+    - (* church rosser -> confluent *)
+      apply H.
+      apply multi_is_rst_closure in H0.
+      apply multi_is_rst_closure in H1.
+      apply rst_closure_symm in H0.
+      apply rst_closure_trans with x; auto.
+  Admitted.
+End Confluency.
