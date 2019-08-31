@@ -37,7 +37,7 @@ Section Confluency.
   Definition terminating_R :=
     well_founded (fun x y => y ==> x).
 
-  Theorem confluent :
+  Theorem newman :
     terminating_R -> weak_confluent_R -> confluent_R.
   Proof.
     unfold weak_confluent_R, confluent_R.
