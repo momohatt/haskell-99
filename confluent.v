@@ -20,10 +20,10 @@ Section Confluency.
 
   Lemma multiR_trans :
     forall x y z, x ==>* y -> y ==>* z -> x ==>* z.
-  Proof.
+  Proof with auto.
     intros. generalize dependent z.
-    induction H as [x | x w y]; auto.
-    - intros. apply multi_step with w; auto.
+    induction H as [x | x w y]...
+    - intros. apply multi_step with w...
   Qed.
 
   Definition weak_confluent_R :=
@@ -39,18 +39,18 @@ Section Confluency.
 
   Theorem newman :
     terminating_R -> weak_confluent_R -> confluent_R.
-  Proof.
+  Proof with eauto.
     unfold weak_confluent_R, confluent_R.
     intros termination weak_confluent x.
-    induction x using (well_founded_ind termination);
-      intros; rename H into IH.
+    induction x as [x IH] using (well_founded_ind termination);
+      intros.
 
-    destruct H0 as [x | x w y].
+    destruct H as [x | x w y].
     - (* x = y *)
-      exists y'; split; eauto.
-    - destruct H1 as [x | x w' y'].
+      exists y'; split...
+    - destruct H0 as [x | x w' y'].
       + (* x = y' *)
-        exists y; split; eauto.
+        exists y; split...
       + assert (exists u, w ==>* u /\ w' ==>* u) by
           (apply weak_confluent with x; auto).
         destruct H3 as [u [? ?]].
@@ -61,8 +61,8 @@ Section Confluency.
         assert (exists d, v ==>* d /\ y' ==>* d) by
           (apply IH with w'; auto).
         destruct H8 as [d [? ?]].
-        exists d; split; auto.
-        apply multiR_trans with v; auto.
+        exists d; split...
+        apply multiR_trans with v...
   Qed.
 
   (* reflexive symmetric transitive closure *)
