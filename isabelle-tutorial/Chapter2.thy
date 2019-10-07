@@ -175,6 +175,11 @@ fun coeffs :: "exp \<Rightarrow> int list" where
 | "coeffs (Add e1 e2) = list_add (coeffs e1) (coeffs e2)"
 | "coeffs (Mult e1 e2) = list_mult (coeffs e1) (coeffs e2)"
 
+(* Why doesn't the following work with
+   apply (induction l1)
+   apply (auto)
+   apply (induction l2)
+   ...  *)
 lemma evalp_add_distr [simp]: "evalp (list_add l1 l2) x = evalp l1 x + evalp l2 x"
   apply (induction rule:list_add.induct)
    apply (auto simp add:algebra_simps)
