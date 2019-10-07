@@ -129,4 +129,74 @@ lemma "itrev xs ys = rev xs @ ys"
    apply (auto)
   done
 
+(* Exercise 2.10 *)
+datatype tree0 = Leaf | Node tree0 tree0
+
+fun nodes :: "tree0 \<Rightarrow> nat" where
+  "nodes Leaf = 1"
+| "nodes (Node t1 t2) = 1 + nodes t1 + nodes t2"
+
+fun explode :: "nat \<Rightarrow> tree0 \<Rightarrow> tree0" where
+  "explode 0 t = t"
+| "explode (Suc n) t = explode n (Node t t)"
+
+theorem explode_node : "nodes (explode n t) = 2^n * (nodes t + 1) - 1"
+  apply (induction n arbitrary:t)
+   apply (auto)
+  apply (simp add:algebra_simps)
+  done
+
+(* Exercise 2.11 *)
+datatype exp = Var | Const int | Add exp exp | Mult exp exp
+
+fun eval :: "exp \<Rightarrow> int \<Rightarrow> int" where
+  "eval Var x = x"
+| "eval (Const n) _ = n"
+| "eval (Add e1 e2) x = (eval e1 x) + (eval e2 x)"
+| "eval (Mult e1 e2) x = (eval e1 x) * (eval e2 x)"
+
+fun evalp :: "int list \<Rightarrow> int \<Rightarrow> int" where
+  "evalp [] x = 0"
+| "evalp (c#cs) x = c + x * (evalp cs x)"
+
+fun list_add :: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+  "list_add [] ys = ys"
+| "list_add xs [] = xs"
+| "list_add (x#xs) (y#ys) = (x + y) # (list_add xs ys)"
+
+fun list_mult :: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+  "list_mult [] _ = []"
+| "list_mult _ [] = []"
+| "list_mult (x#xs) ys = list_add (map (\<lambda>n. n * x) ys) (list_mult xs (0 # ys))"
+
+fun coeffs :: "exp \<Rightarrow> int list" where
+  "coeffs Var = [0, 1]"
+| "coeffs (Const n) = [n]"
+| "coeffs (Add e1 e2) = list_add (coeffs e1) (coeffs e2)"
+| "coeffs (Mult e1 e2) = list_mult (coeffs e1) (coeffs e2)"
+
+lemma evalp_add_distr [simp]: "evalp (list_add l1 l2) x = evalp l1 x + evalp l2 x"
+  apply (induction rule:list_add.induct)
+   apply (auto simp add:algebra_simps)
+  done
+
+lemma evalp_map : "evalp (map (\<lambda>n. n * a) l) x = a * evalp l x"
+  apply (induction l)
+   apply (auto simp add:algebra_simps)
+  done
+
+lemma evalp_mult_distr : "evalp (list_mult l1 l2) x = evalp l1 x * evalp l2 x"
+  apply (induction rule:list_mult.induct)
+  apply (auto)
+  apply (simp add:evalp_map)
+  apply (simp add:algebra_simps)
+  done
+
+theorem coeffs_preserve : "evalp (coeffs e) x = eval e x"
+  apply (induction e)
+   apply (auto)
+   apply (simp add:evalp_add_distr)
+   apply (simp add:evalp_mult_distr)
+  done
+
 end
