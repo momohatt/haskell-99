@@ -80,12 +80,12 @@ qed
 lemma "\<exists>ys zs. xs = ys @ zs \<and> (length ys = length zs \<or> length ys = length zs + 1)"
 proof cases
   assume asm:"even (length xs)"
+  let ?ys = "take ((length xs) div 2) xs"
+  let ?zs = "drop ((length xs) div 2) xs"
   show ?thesis
   proof
-    let ?ys = "take ((length xs) div 2) xs"
     show "\<exists>zs. xs = ?ys @ zs \<and> (length ?ys = length zs \<or> length ?ys = length zs + 1)"
     proof
-      let ?zs = "drop ((length xs) div 2) xs"
       have "xs = ?ys @ ?zs" using append_eq_append_conv by auto
       have "length ?ys = length ?zs" using asm by (auto simp add:algebra_simps)
       hence "xs = ?ys @ ?zs \<and> length ?ys = length ?zs" by auto
@@ -94,26 +94,21 @@ proof cases
   qed
 next
   assume asm:"odd (length xs)"
+  let ?ys = "take (length xs div 2 + 1) xs"
+  let ?zs = "drop (length xs div 2 + 1) xs"
   show ?thesis
   proof
-    let ?ys = "take (length xs div 2 + 1) xs"
     show "\<exists>zs. xs = ?ys @ zs \<and> (length ?ys = length zs \<or> length ?ys = length zs + 1)"
     proof
-      let ?zs = "drop (length xs div 2 + 1) xs"
       have "xs = ?ys @ ?zs" using append_eq_append_conv by auto
       have "length ?ys = length ?zs + 1"
       proof -
-        have 0:"length ?zs = length xs div 2"
-        proof -
-          have "length xs = 2 * (length xs div 2) + 1" using asm by fastforce
-          thus ?thesis by auto
-        qed
-        have 1:"length ?ys = length xs div 2 + 1"
-        proof -
-          have "\<forall>n :: nat. odd n \<longrightarrow> n \<ge> 1" using Parity.odd_pos by fastforce
-          hence "length xs \<ge> 1" using asm by auto
-          thus ?thesis by auto
-        qed
+        have "length xs = 2 * (length xs div 2) + 1" using asm by fastforce
+        hence 0:"length ?zs = length xs div 2" by auto
+
+        have "\<forall>n :: nat. odd n \<longrightarrow> n \<ge> 1" using Parity.odd_pos by fastforce
+        hence "length xs \<ge> 1" using asm by auto
+        hence 1:"length ?ys = length xs div 2 + 1" by auto
         thus ?thesis using 0 by auto
       qed
       hence "xs = ?ys @ ?zs \<and> length ?ys = length ?zs + 1" by auto
