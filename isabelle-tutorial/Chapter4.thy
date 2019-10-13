@@ -117,4 +117,109 @@ next
   qed
 qed
 
+(* 4.4 Case Analysis and Induction *)
+(* 4.4.1 Datatype Case Analysis *)
+
+lemma "length (tl xs) = length xs - 1"
+proof (cases xs)
+  (* Note that by definition, "tl [] = []" *)
+  case Nil (* assume "xs = []" *)
+  thus ?thesis by simp
+next
+  case (Cons y ys) (* fix y ys assume xs = y # ys *)
+  thus ?thesis by simp
+qed
+
+(* 4.4.2 Structural Induction *)
+lemma "\<Sum>{0..n::nat} = n * (n + 1) div 2" (is "?P n")
+proof (induction n)
+  show "?P 0" by simp
+next
+  fix n assume "?P n"
+  thus "?P (Suc n)" by simp
+qed
+
+lemma "\<Sum>{0..n::nat} = n * (n + 1) div 2" (is "?P n")
+proof (induction n)
+  case 0
+  show ?case by simp
+next
+  case (Suc n) (* sets induction hypothesis to 'this' *)
+  thus ?case by simp
+qed
+
+(* 4.4.3 Computation Induction *)
+(* In computation induction (with induction rule defined by 'fun'),
+   we can specify case names like 'case (i x y ...)' where 'i' is
+   an index starting from 1 and x, y, ... are bound variables *)
+
+(* 4.4.4 Rule Induction *)
+inductive ev :: "nat \<Rightarrow> bool" where
+  ev0 : "ev 0"
+| evSS : "ev n \<Longrightarrow> ev (Suc (Suc n))"
+
+fun evn :: "nat \<Rightarrow> bool" where
+  "evn 0 = True"
+| "evn (Suc 0) = False"
+| "evn (Suc(Suc n)) = evn n"
+
+lemma "ev n \<Longrightarrow> evn n"
+proof (induction rule:ev.induct)
+  case ev0
+  show ?case by simp
+next
+  case (evSS n)
+  have "evn (Suc (Suc n)) = evn n" by simp
+  thus ?case using `evn n` by blast
+qed
+
+(* 4.4.6 Rule Inversion *)
+lemma
+  assumes "ev n"
+  shows "ev (n - 2)"
+  using assms
+proof cases
+  case ev0
+  thus "ev(n - 2)" by (simp add: ev.ev0)
+next
+  case evSS
+  thus "ev (n - 2)" by (simp add: ev.evSS)
+qed
+
+lemma "\<not> ev (Suc 0)"
+proof
+  assume "ev (Suc 0)"
+  then show False by cases
+qed
+
+lemma "\<not> ev (Suc (Suc (Suc 0)))"
+proof
+  assume "ev (Suc (Suc (Suc 0)))"
+  then have "ev (Suc 0)" by cases
+  thus False by cases
+qed
+
+(* 4.4.7 Advanced Rule Induction *)
+lemma "ev (Suc m) \<Longrightarrow> \<not> ev m"
+proof (induction "Suc m" arbitrary:m rule:ev.induct)
+  fix n assume IH: "\<And> m. n = Suc m \<Longrightarrow> \<not> ev m"
+  show "\<not> ev (Suc n)"
+  proof
+    assume "ev (Suc n)"
+    thus False
+    proof cases
+      fix k assume "n = Suc k" "ev k"
+      thus False using IH by auto
+    qed
+  qed
+qed
+
+(* Exercise 4.3 *)
+lemma assumes a: "ev(Suc(Suc n))" shows "ev n"
+  using a
+proof cases
+  case evSS
+  show "ev n \<Longrightarrow> ev n" by (simp add: ev.ev0)
+qed
+
 end
