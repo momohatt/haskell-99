@@ -192,13 +192,6 @@ proof
   then show False by cases
 qed
 
-lemma "\<not> ev (Suc (Suc (Suc 0)))"
-proof
-  assume "ev (Suc (Suc (Suc 0)))"
-  then have "ev (Suc 0)" by cases
-  thus False by cases
-qed
-
 (* 4.4.7 Advanced Rule Induction *)
 lemma "ev (Suc m) \<Longrightarrow> \<not> ev m"
 proof (induction "Suc m" arbitrary:m rule:ev.induct)
@@ -221,5 +214,70 @@ proof cases
   case evSS
   show "ev n \<Longrightarrow> ev n" by (simp add: ev.ev0)
 qed
+
+(* Exercise 4.4 *)
+lemma "\<not> ev (Suc (Suc (Suc 0)))"
+proof
+  assume "ev (Suc (Suc (Suc 0)))"
+  then have "ev (Suc 0)" by cases
+  thus False by cases
+qed
+
+(* Exercise 4.5 *)
+inductive iter :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> nat \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+  iter_zero: "iter r 0 x x"
+| iter_succ: "r x y \<Longrightarrow> iter r n y z \<Longrightarrow> iter r (Suc n) x z"
+
+inductive star :: "('a \<Rightarrow> 'a \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" for r where
+  refl: "star r x x"
+| step: "r x y \<Longrightarrow> star r y z \<Longrightarrow> star r x z"
+
+lemma "iter r n x y \<Longrightarrow> star r x y"
+proof (induction rule:iter.induct)
+  case iter_zero
+  thus ?case by (auto simp add:refl)
+next
+  case iter_succ
+  thus ?case by (auto simp add:step)
+qed
+
+(* Exercise 4.6 *)
+fun elems :: "'a list \<Rightarrow> 'a set" where
+  elems_Nil:  "elems [] = {}"
+| elems_Cons: "elems (x#xs) = insert x (elems xs)"
+
+lemma "x \<in> elems xs \<Longrightarrow> \<exists> ys zs. xs = ys @ x # zs \<and> x \<notin> elems ys" (is "?P(x,xs) \<Longrightarrow> ?Q(x,xs)")
+proof (induction xs)
+  case Nil
+  hence False by auto
+  thus ?case by auto
+next
+  case (Cons x' xs)
+  hence "x = x' \<or> (x \<noteq> x' \<and> x \<in> elems xs)" by auto
+  then show ?case
+  proof
+    assume H:"x = x'"
+    show ?case
+    proof
+      show "\<exists> zs. x' # xs = [] @ x # zs \<and> x \<notin> elems []"
+      proof
+        show "x' # xs = [] @ x # xs \<and> x \<notin> elems []" using H by auto
+      qed
+    qed
+  next
+    assume H:"(x \<noteq> x' \<and> x \<in> elems xs)"
+    from this obtain ys where "\<exists>zs. xs = ys @ x # zs \<and> x \<notin> elems ys" using Cons.IH by auto
+    from this obtain zs where H1: "xs = ys @ x # zs \<and> x \<notin> elems ys" by auto
+    show ?case
+    proof
+      show "\<exists> zs. x' # xs = (x' # ys) @ x # zs \<and> x \<notin> elems (x' # ys)"
+      proof
+        show "x' # xs = (x' # ys) @ x # zs \<and> x \<notin> elems (x' # ys)" using H H1 by auto
+      qed
+    qed
+  qed
+qed
+
+(* Exercise 4.7 *)
 
 end
