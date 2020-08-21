@@ -1,0 +1,7 @@
+package idris-99
+
+sourcedir = src
+modules = Lists
+opts = "--check --total"
+-- executable = "idris-99"
+-- main = Main
